@@ -4,8 +4,9 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
+from .constants import (EXPECTED_REDIRECT_URL, NOTE_ADD_URL,
+                        NOTE_SLUG, NOTE_TEXT, NOTE_TITLE, NEW_NOTE_TEXT)
 from notes.models import Note
-from notes.forms import NoteForm
 
 
 User = get_user_model()
@@ -13,23 +14,19 @@ User = get_user_model()
 
 class TestNoteCreation(TestCase):
 
-    NOTE_TITLE = 'Название заметки'
-    NOTE_TEXT = 'Текст заметки'
-    NOTE_ADD_URL = reverse('notes:add')
-    NOTE_SLUG = 'nazvanie-zametki'
 
     @classmethod
     def setUpTestData(cls):
         cls.user = User.objects.create(username='Sansa Stark')
         cls.auth_client = Client()
         cls.auth_client.force_login(cls.user)
-        cls.form_data = {'title': cls.NOTE_TITLE, 'text': cls.NOTE_TEXT}
+        cls.form_data = {'title': NOTE_TITLE, 'text': NOTE_TEXT}
 
     def test_anonymous_user_cant_create_note(self):
         """Метод проверяет, что анонимный пользователь 
         не может создать заметку
         """
-        self.client.post(self.NOTE_ADD_URL, data=self.form_data)
+        self.client.post(NOTE_ADD_URL, data=self.form_data)
         note_count = Note.objects.count()
         self.assertEqual(note_count, 0)
 
@@ -38,16 +35,15 @@ class TestNoteCreation(TestCase):
         может создать заметку
         """
         response = self.auth_client.post(
-            self.NOTE_ADD_URL,
+            NOTE_ADD_URL,
             data=self.form_data
         )
-        expected_redirect_url = reverse('notes:success')
-        self.assertRedirects(response, expected_redirect_url)
+        self.assertRedirects(response, EXPECTED_REDIRECT_URL)
         note_count = Note.objects.count()
         self.assertEqual(note_count, 1)
         note = Note.objects.get()
-        self.assertEqual(note.title, self.NOTE_TITLE)
-        self.assertEqual(note.text, self.NOTE_TEXT)
+        self.assertEqual(note.title, NOTE_TITLE)
+        self.assertEqual(note.text, NOTE_TEXT)
         self.assertEqual(note.author, self.user)
 
     def test_validate_slug(self):
@@ -55,26 +51,22 @@ class TestNoteCreation(TestCase):
         он автоматически создается из названия заметки
         """
         self.auth_client.post(
-            self.NOTE_ADD_URL,
+            NOTE_ADD_URL,
             data=self.form_data
         )
         note = Note.objects.get()
-        self.assertEqual(note.slug, self.NOTE_SLUG)
+        self.assertEqual(note.slug, NOTE_SLUG)
 
 
 class TestNoteEditDelete(TestCase):
-
-    NOTE_TITLE = 'Название заметки'
-    NOTE_TEXT = 'Текст заметки'
-    NEW_NOTE_TEXT = 'Новый текст заметки'
 
     @classmethod
     def setUpTestData(cls):
         cls.author = User.objects.create(username='Автор заметки')
         cls.reader = User.objects.create(username='Чиатель')
         cls.note = Note.objects.create(
-            title=cls.NOTE_TITLE,
-            text=cls.NOTE_TEXT,
+            title=NOTE_TITLE,
+            text=NOTE_TEXT,
             author=cls.author
         )
         cls.author_client = Client()
@@ -85,15 +77,14 @@ class TestNoteEditDelete(TestCase):
         cls.edit_url = reverse('notes:edit', args=(cls.note.slug,))
         cls.delete_url = reverse('notes:delete', args=(cls.note.slug,))
 
-        cls.form_data = {'title': cls.NOTE_TITLE, 'text': cls.NEW_NOTE_TEXT} 
+        cls.form_data = {'title': NOTE_TITLE, 'text': NEW_NOTE_TEXT} 
 
     def test_author_can_delete_note(self):
         """Метод проверяет, что авторизованный пользователь может
         удалять свои заметки.
         """
         response = self.author_client.delete(self.delete_url)
-        expected_redirect_url = reverse('notes:success')
-        self.assertRedirects(response, expected_redirect_url)
+        self.assertRedirects(response, EXPECTED_REDIRECT_URL)
         note_count = Note.objects.count()
         self.assertEqual(note_count, 0)
 
@@ -113,16 +104,13 @@ class TestNoteEditDelete(TestCase):
         response = self.reader_client.post(self.edit_url, data=self.form_data)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.note.refresh_from_db()
-        self.assertEqual(self.note.text, self.NOTE_TEXT)
+        self.assertEqual(self.note.text, NOTE_TEXT)
 
     def test_author_can_edit_note(self):
         """Метод проверяет, что авторизованный пользователь
         может редактировать чужие заметки.
         """
         response = self.author_client.post(self.edit_url, data=self.form_data)
-        print(response.content)
-        print(self.edit_url)
-        expected_redirect_url = reverse('notes:success')
-        self.assertRedirects(response, expected_redirect_url)
+        self.assertRedirects(response, EXPECTED_REDIRECT_URL)
         self.note.refresh_from_db()
-        self.assertEqual(self.note.text, self.NEW_NOTE_TEXT)
+        self.assertEqual(self.note.text, NEW_NOTE_TEXT)

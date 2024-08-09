@@ -1,1 +1,0 @@
-NOTES_COUNT = 10

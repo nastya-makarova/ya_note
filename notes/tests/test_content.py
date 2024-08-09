@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from notes.constants import NOTES_COUNT
+from .constants import NOTES_COUNT
 from notes.models import Note
 
 
