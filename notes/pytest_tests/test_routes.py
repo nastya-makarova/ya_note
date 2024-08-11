@@ -10,9 +10,7 @@ from pytest_django.asserts import assertRedirects
     ('notes:home', 'users:login', 'users:logout', 'users:signup')
 )
 def test_pages_availability_for_anonymous_user(client, name):
-    """Метод проверяет, что анонимному пользователю 
-    доступна главная страница проекта.
-    """
+    """Метод проверяет, что доступность страниц анонимному пользователю."""
     url = reverse(name)
     response = client.get(url)
     assert response.status_code == HTTPStatus.OK
