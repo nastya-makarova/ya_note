@@ -51,3 +51,13 @@ def note(author):
 @pytest.fixture
 def slug_for_args(note):
     return (note.slug,)
+
+
+@pytest.fixture
+def form_data():
+    """Фикстура возвращает словарь модели Note"""
+    return {
+        'title': 'Новый заголовок',
+        'text': 'Новый текст',
+        'slug': 'new-slug'
+    }
