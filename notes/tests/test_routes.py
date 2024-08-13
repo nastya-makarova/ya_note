@@ -21,9 +21,10 @@ class TestRoutes(TestCase):
             text='Текст заметки',
             author=cls.author
         )
+        cls.slug_for_args = (cls.notes.slug,)
 
     def test_pages_availability_for_anonymous_user(self):
-        """Метод тестирует доступность для анонимных пользователей 
+        """Метод тестирует доступность для анонимных пользователей
         главной страницы,
         cтраницы регистрации пользователей,
         страниц входа в учётную запись и выхода из неё.
@@ -72,15 +73,20 @@ class TestRoutes(TestCase):
             self.client.force_login(user)
             for name in ('notes:edit', 'notes:delete', 'notes:detail'):
                 with self.subTest(name=name, user=user):
-                    url = reverse(name, args=(self.notes.slug,))
+                    url = reverse(name, args=self.slug_for_args)
                     response = self.client.get(url)
                     self.assertEqual(response.status_code, status)
 
     def test_redirects(self):
+        """Метод проверяет, что при попытке перейти на страницу списка заметок,
+        страницу успешного добавления записи, страницу добавления заметки,
+        отдельной заметки, редактирования или удаления заметки анонимный
+        пользователь перенаправляется на страницу логина.
+        """
         urls = (
-            ('notes:detail', (self.notes.slug,)),
-            ('notes:edit', (self.notes.slug,)),
-            ('notes:delete', (self.notes.slug,)),
+            ('notes:detail', self.slug_for_args),
+            ('notes:edit', self.slug_for_args),
+            ('notes:delete', self.slug_for_args),
             ('notes:add', None),
             ('notes:list', None),
             ('notes:success', None)
