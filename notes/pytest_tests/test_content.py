@@ -35,3 +35,4 @@ def test_pages_contains_form(author_client, name, args):
     assert 'form' in response.context
     # Проверяем, что объект формы относится к нужному классу.
     assert isinstance(response.context['form'], NoteForm)
+
