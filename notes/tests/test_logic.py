@@ -71,10 +71,10 @@ class TestSlug(BaseTestClass):
         note = Note.objects.create(
             title=self.NOTE_TITLE,
             text=self.NOTE_TEXT,
-            slug=self.NOTE_SLUG,
+            slug='note-slug',
             author=self.author
         )
-        self.form_data['form'] = note.slug
+        self.form_data['slug'] = note.slug
         response = self.auth_client.post(
             self.NOTE_ADD_URL, data=self.form_data
         )
@@ -108,7 +108,7 @@ class TestNoteEditDelete(BaseTestClass):
         super().setUpTestData()
         cls.note = Note.objects.create(
             title=cls.NOTE_TITLE,
-            text=cls.NOTE_TEXT,
+            text='Текст для заметки',
             author=cls.author
         )
         cls.reader = User.objects.create(username='Читатель')
