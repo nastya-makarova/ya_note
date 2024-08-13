@@ -22,7 +22,7 @@ class TestRoutes(TestCase):
             author=cls.author
         )
 
-    def test_pages_availability_for_unauthorized_user(self):
+    def test_pages_availability_for_anonymous_user(self):
         """Метод тестирует доступность для анонимных пользователей 
         главной страницы,
         cтраницы регистрации пользователей,
@@ -40,9 +40,9 @@ class TestRoutes(TestCase):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_pages_availability_for_author(self):
+    def test_pages_availability_for_auth_user(self):
         """Метод проверяет доступность автору страниц:
-        страницы отдельной заметки, страницы списка заметок,
+        страницы успешного добавления заметки, страницы списка заметок,
         страницы создания заметки.
         """
         # Логиним пользователя в клиенте:
@@ -51,21 +51,17 @@ class TestRoutes(TestCase):
         # Создаём набор тестовых данных - кортеж кортежей.
         # Каждый вложенный кортеж содержит два элемента:
         # имя пути и позиционные аргументы для функции reverse().
-        urls = (
-            ('notes:add', None),
-            ('notes:detail', (self.notes.slug,)),
-            ('notes:list', None),
-        )
-
-        for name, args in urls:
+        urls = ('notes:add', 'notes:list', 'notes:success')
+        for name in urls:
             with self.subTest(name=name):
-                url = reverse(name, args=args)
+                url = reverse(name)
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_availability_for_comment_edit_and_delete(self):
-        """Метод проверяет, что страницы редактирования и удаления
-        заметки доступны автору, но недоступны другому пользователю.
+    def test_pages_availability_for_different_users(self):
+        """Метод проверяет, что cтраницы отдельной заметки, страницы
+        редактирования и удаления заметки доступны автору, но недоступны
+        другому пользователю.
         """
         users_statuses = (
             (self.author, HTTPStatus.OK),
@@ -74,8 +70,25 @@ class TestRoutes(TestCase):
 
         for user, status in users_statuses:
             self.client.force_login(user)
-            for name in ('notes:edit', 'notes:delete'):
+            for name in ('notes:edit', 'notes:delete', 'notes:detail'):
                 with self.subTest(name=name, user=user):
                     url = reverse(name, args=(self.notes.slug,))
                     response = self.client.get(url)
                     self.assertEqual(response.status_code, status)
+
+    def test_redirects(self):
+        urls = (
+            ('notes:detail', (self.notes.slug,)),
+            ('notes:edit', (self.notes.slug,)),
+            ('notes:delete', (self.notes.slug,)),
+            ('notes:add', None),
+            ('notes:list', None),
+            ('notes:success', None)
+        )
+        login_url = reverse('users:login')
+        for name, args in urls:
+            with self.subTest(name=name):
+                url = reverse(name, args=args)
+                expected_url = f'{login_url}?next={url}'
+                response = self.client.get(url)
+                self.assertRedirects(response, expected_url)
